@@ -1,20 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Users, Loader2, Plane, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { getAirportSuggestions, searchFlights } from '@/lib/amadeus';
 import type { Location, Passengers, SelectedLocation } from '@/components/types';
-import { LocationSelector } from '@/components/utils/locationSelector';
-import { DateSelector } from '@/components/utils/dateSelector';
 import { Badge } from '@/components/ui/badge';
-
+import { LocationSelector } from '@/components/utility/locationSelector';
+import { DateSelector } from '@/components/utility/dateSelector';
+import { FlightResults } from './FlightResults';
 
 export function SearchFlight() {
     const INITIAL_PASSENGERS: Passengers = {
@@ -37,6 +36,7 @@ export function SearchFlight() {
     const [loading, setLoading] = useState(false);
     const [fromOpen, setFromOpen] = useState(false);
     const [toOpen, setToOpen] = useState(false);
+    const [flightData, setFlightData] = useState<any[]>([]);
 
     const FLIGHT_CLASSES = [
         { value: 'ECONOMY', label: 'Economy' },
@@ -61,12 +61,11 @@ export function SearchFlight() {
 
             try {
                 const data = await getAirportSuggestions(query);
-                const filteredData = data.filter((location: Location) =>
-                    location.subType === 'CITY' || location.subType === 'AIRPORT'
+                const filtered = data.filter(
+                    (l: Location) => l.subType === 'CITY' || l.subType === 'AIRPORT'
                 );
-                setResults(filteredData);
-            } catch (error) {
-                console.error('Error fetching location suggestions:', error);
+                setResults(filtered);
+            } catch {
                 setResults([]);
             }
         };
@@ -85,47 +84,44 @@ export function SearchFlight() {
         };
     }, [fromSearch, toSearch]);
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
 
-        if (!from || !to || !departureDate) {
-            alert('Please fill in all required fields');
-            return;
-        }
+const handleSearch = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-        setLoading(true);
+  if (!from || !to || !departureDate) {
+    alert('Please fill in all required fields');
+    return;
+  }
 
-        try {
-            const flightData = await searchFlights({
-                originLocationCode: from.cityCode,
-                destinationLocationCode: to.cityCode,
-                departureDate: format(departureDate, 'yyyy-MM-dd'),
-                returnDate: returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
-                adults: passengers.adults,
-                children: passengers.children || undefined,
-                infants: passengers.infants || undefined,
-                travelClass,
-                currencyCode: 'USD',
-                max: 20
-            });
+  setLoading(true);
 
-            console.log('Flight search results:', flightData);
+  try {
+    const res = await searchFlights({
+      originLocationCode: from.cityCode,
+      destinationLocationCode: to.cityCode,
+      departureDate: format(departureDate, 'yyyy-MM-dd'),
+      returnDate: returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
+      adults: passengers.adults,
+      children: passengers.children || undefined,
+      infants: passengers.infants || undefined,
+      travelClass,
+      currencyCode: 'USD',
+      max: 50 
+    });
 
-            window.dispatchEvent(new CustomEvent('flightSearchResults', {
-                detail: flightData
-            }));
-        } catch (error) {
-            console.error('Search failed:', error);
-            alert('Search failed. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const flights = res?.data || [];
+    console.log('Search results:', flights); 
+    setFlightData(flights);
+  } catch {
+    alert('Search failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
     const createSelectedLocation = (location: Location): SelectedLocation => {
-        const cityCode = location.subType === 'CITY'
-            ? (location.address.cityCode || location.iataCode)
-            : (location.address.cityCode || location.iataCode);
+        const cityCode =
+            location.address.cityCode || location.iataCode;
 
         return {
             cityCode,
@@ -145,134 +141,137 @@ export function SearchFlight() {
     const getTotalPassengers = () =>
         passengers.adults + passengers.children + passengers.infants;
 
-
-
     return (
-        <Card className="w-full">
-            <CardContent>
-                <form onSubmit={handleSearch} className="space-y-6">
-                    <div className="flex flex-col md:flex-row gap-4 justify-between">
-                        {/* trip Type */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <ArrowRightLeft className="h-4 w-4" />Trip Type
-                            </Label>
-                            <div className="flex gap-2">
-                                <Button type="button" variant={tripType === 'round' ? 'default' : 'outline'} className={cn('flex-1', tripType === 'round' && 'bg-primary hover:bg-green-600')} onClick={() => setTripType('round')} >
-                                    Round Trip
-                                </Button>
-                                <Button type="button" variant={tripType === 'one-way' ? 'default' : 'outline'} className={cn('flex-1', tripType === 'one-way' && 'bg-primary hover:bg-green-600')} onClick={() => setTripType('one-way')}>
-                                    One Way
-                                </Button>
+        <>
+            <Card className="w-full">
+                <CardContent>
+                    <form onSubmit={handleSearch} className="space-y-6">
+                        <div className="flex flex-col md:flex-row gap-4 justify-between">
+                            {/* trip Type */}
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <ArrowRightLeft className="h-4 w-4" />Trip Type
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Button type="button" variant={tripType === 'round' ? 'default' : 'outline'} className={cn('flex-1', tripType === 'round' && 'bg-primary hover:bg-green-600')} onClick={() => setTripType('round')} >
+                                        Round Trip
+                                    </Button>
+                                    <Button type="button" variant={tripType === 'one-way' ? 'default' : 'outline'} className={cn('flex-1', tripType === 'one-way' && 'bg-primary hover:bg-green-600')} onClick={() => setTripType('one-way')}>
+                                        One Way
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* passengers */}
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />Passengers
+                                </Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="h-9 w-full justify-start gap-2">
+                                            <Users className="h-4 w-4" />
+                                            <span>{getTotalPassengers()} Passenger(s)</span>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80">
+                                        <div className="space-y-4">
+                                            {[{ key: 'adults' as const, label: 'Adults', description: 'Age 12+' }, { key: 'children' as const, label: 'Children', description: 'Age 2-11' }, { key: 'infants' as const, label: 'Infants', description: 'Under 2' }].map(({ key, label, description }) => (
+                                                <div key={key} className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="font-medium">{label}</p>
+                                                        <p className="text-sm text-muted-foreground">{description}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <Button type="button" variant="outline" size="icon" onClick={() => updatePassengerCount(key, -1)} >-</Button>
+                                                        <span className="w-8 text-center">{passengers[key]}</span>
+                                                        <Button type="button" variant="outline" size="icon" onClick={() => updatePassengerCount(key, 1)}>+</Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            {/* Class type */}
+                            <div className="flex-1 space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Plane className="h-4 w-4" />Class *
+                                </Label>
+                                <Select value={travelClass} onValueChange={setTravelClass}>
+                                    <SelectTrigger className="h-12">
+                                        <SelectValue placeholder="Select class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {FLIGHT_CLASSES.map((flightClass) => (
+                                            <SelectItem key={flightClass.value} value={flightClass.value}>
+                                                {flightClass.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
-                        {/* passengers */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />Passengers
-                            </Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="h-9 w-full justify-start gap-2">
-                                        <Users className="h-4 w-4" />
-                                        <span>{getTotalPassengers()} Passenger(s)</span>
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    <div className="space-y-4">
-                                        {[{ key: 'adults' as const, label: 'Adults', description: 'Age 12+' }, { key: 'children' as const, label: 'Children', description: 'Age 2-11' }, { key: 'infants' as const, label: 'Infants', description: 'Under 2' }].map(({ key, label, description }) => (
-                                            <div key={key} className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-medium">{label}</p>
-                                                    <p className="text-sm text-muted-foreground">{description}</p>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Button type="button" variant="outline" size="icon" onClick={() => updatePassengerCount(key, -1)} >-</Button>
-                                                    <span className="w-8 text-center">{passengers[key]}</span>
-                                                    <Button type="button" variant="outline" size="icon" onClick={() => updatePassengerCount(key, 1)}>+</Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
+                        {/* location & date */}
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <LocationSelector label="From *" value={from} search={fromSearch} onSearchChange={setFromSearch} locations={fromLocations} open={fromOpen} onOpenChange={setFromOpen} onSelect={(location) => { setFrom(createSelectedLocation(location)); setFromOpen(false); }} />
+
+                            <LocationSelector label="To *" value={to} search={toSearch} onSearchChange={setToSearch} locations={toLocations} open={toOpen} onOpenChange={setToOpen} onSelect={(location) => { setTo(createSelectedLocation(location)); setToOpen(false); }} />
+
+                            <DateSelector label="Departure *" date={departureDate} onDateChange={setDepartureDate} />
+
+                            <DateSelector label="Return" date={returnDate} onDateChange={setReturnDate} disabled={tripType === 'one-way'} />
                         </div>
 
-                        {/* Class type */}
-                        <div className="flex-1 space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Plane className="h-4 w-4" />Class *
-                            </Label>
-                            <Select value={travelClass} onValueChange={setTravelClass}>
-                                <SelectTrigger className="h-12">
-                                    <SelectValue placeholder="Select class" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FLIGHT_CLASSES.map((flightClass) => (
-                                        <SelectItem key={flightClass.value} value={flightClass.value}>
-                                            {flightClass.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    {/* location & date */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <LocationSelector label="From *" value={from} search={fromSearch} onSearchChange={setFromSearch} locations={fromLocations} open={fromOpen} onOpenChange={setFromOpen} onSelect={(location) => { setFrom(createSelectedLocation(location)); setFromOpen(false); }} />
-
-                        <LocationSelector label="To *" value={to} search={toSearch} onSearchChange={setToSearch} locations={toLocations} open={toOpen} onOpenChange={setToOpen} onSelect={(location) => { setTo(createSelectedLocation(location)); setToOpen(false); }} />
-
-                        <DateSelector label="Departure *" date={departureDate} onDateChange={setDepartureDate} />
-
-                        <DateSelector label="Return" date={returnDate} onDateChange={setReturnDate} disabled={tripType === 'one-way'} />
-                    </div>
-
-                    {/* search */}
-                    <Button type="submit" className="h-12 w-full bg-primary hover:bg-green-600 md:w-auto" size="lg" disabled={loading || !from || !to || !departureDate}
+                        {/* search */}
+                        <Button type="submit" className="h-12 w-full bg-primary hover:bg-green-600 md:w-auto" size="lg" disabled={loading || !from || !to || !departureDate}
                         > {loading ? (
                             <><Loader2 className="h-4 w-4 animate-spin" />Searching...</>
                         ) : (
                             <>Search Flights</>
                         )}
-                    </Button>
-                    
+                        </Button>
 
 
-                    {/* popular */}
-                    <div className="flex flex-col gap-2">
-                        <p className="text-sm font-medium text-muted-foreground">
-                            Popular flights:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                            {POPULAR_FLIGHTS.map((route) => (
-                                <Badge
-                                    key={`${route.from}-${route.to}`}
-                                    variant="outline"
-                                    className="cursor-pointer hover:bg-muted"
-                                    onClick={() => {
 
-                                        setFrom({
-                                            cityCode: route.from, cityName: route.from === 'DAC' ? 'Dhaka' : 'City', countryCode: route.from === 'DAC' ? 'BD' : 'US',
-                                            displayName: route.label.split('→')[0].trim()
-                                        });
-                                        setTo({
-                                            cityCode: route.to,
-                                            cityName: route.to === 'DXB' ? 'Dubai' : 'City',
-                                            countryCode: route.to === 'DXB' ? 'AE' : 'US',
-                                            displayName: route.label.split('→')[1].trim()
-                                        });
-                                    }}
-                                >
-                                    {route.label}
-                                </Badge>
-                            ))}
+                        {/* popular */}
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Popular flights:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {POPULAR_FLIGHTS.map((route) => (
+                                    <Badge
+                                        key={`${route.from}-${route.to}`}
+                                        variant="outline"
+                                        className="cursor-pointer hover:bg-muted"
+                                        onClick={() => {
+
+                                            setFrom({
+                                                cityCode: route.from, cityName: route.from === 'DAC' ? 'Dhaka' : 'City', countryCode: route.from === 'DAC' ? 'BD' : 'US',
+                                                displayName: route.label.split('→')[0].trim()
+                                            });
+                                            setTo({
+                                                cityCode: route.to,
+                                                cityName: route.to === 'DXB' ? 'Dubai' : 'City',
+                                                countryCode: route.to === 'DXB' ? 'AE' : 'US',
+                                                displayName: route.label.split('→')[1].trim()
+                                            });
+                                        }}
+                                    >
+                                        {route.label}
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
+                    </form>
+                </CardContent>
+            </Card>
+            {flightData.length > 0 && (
+                <FlightResults flights={flightData} loading={loading} />
+            )}
+        </>
     );
 }
