@@ -43,4 +43,16 @@ export type Passengers = {
   infants: number;
 };
 
+export interface FlightOffer {
+  id: string;
+  price: { total: string; currency: string };
+  itineraries: Array<{ segments: Array<{ departure: { iataCode: string; at: string }; arrival: { iataCode: string; at: string }; carrierCode: string; duration: string }> }>;
+}
+
+export interface FlightResultsProps {
+  flights?: FlightOffer[];
+  loading?: boolean;
+}
+
+
 

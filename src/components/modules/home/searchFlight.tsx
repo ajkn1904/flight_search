@@ -94,6 +94,7 @@ const handleSearch = async (e: React.FormEvent) => {
   }
 
   setLoading(true);
+  setFlightData([]);
 
   try {
     const res = await searchFlights({
@@ -106,14 +107,20 @@ const handleSearch = async (e: React.FormEvent) => {
       infants: passengers.infants || undefined,
       travelClass,
       currencyCode: 'USD',
-      max: 50 
+      max: 250 
     });
 
     const flights = res?.data || [];
-    console.log('Search results:', flights); 
+    console.log('Search results count:', flights.length, 'Flights:', flights);
+    
+    if (flights.length === 0) {
+      alert('No flights found for the selected route and dates');
+    }
+    
     setFlightData(flights);
-  } catch {
-    alert('Search failed. Please try again.');
+  } catch (error: any) {
+    console.error('Search error:', error);
+    alert(`Search failed: ${error.response?.data?.errors?.[0]?.detail || error.message || 'Please try again.'}`);
   } finally {
     setLoading(false);
   }

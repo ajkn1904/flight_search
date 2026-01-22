@@ -4,17 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Plane, ChevronDown, ChevronUp } from 'lucide-react';
+import type { FlightOffer, FlightResultsProps } from '@/components/types';
 
-interface FlightOffer {
-  id: string;
-  price: { total: string; currency: string };
-  itineraries: Array<{ segments: Array<{ departure: { iataCode: string; at: string }; arrival: { iataCode: string; at: string }; carrierCode: string; duration: string }> }>;
-}
-
-interface FlightResultsProps {
-  flights?: FlightOffer[];
-  loading?: boolean;
-}
 
 export function FlightResults({ flights = [], loading = false }: FlightResultsProps) {
   const [displayedFlights, setDisplayedFlights] = useState<FlightOffer[]>([]);
@@ -79,10 +70,9 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
           const isExpanded = expanded[flight.id];
 
           return (
-            <Card key={flight.id} className="hover:shadow-md transition">
-              <CardContent className="p-4 space-y-3">
+            <Card key={flight.id} className="hover:bg-gray-100 transition p-2">
+              <CardContent>
 
-                {/* Top Row */}
                 <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4">
 
                   {/* Airline */}
@@ -99,20 +89,25 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
                       <p className="font-semibold">{formatTime(first.departure.at)}</p>
                       <p className="text-xs text-muted-foreground">{first.departure.iataCode}</p>
                     </div>
-                    <div className="text-xs text-muted-foreground flex flex-col items-center">
-                      <Clock className="h-4 w-4" />
-                      {formatDuration(first.duration)}
-                    </div>
+
                     <div>
                       <p className="font-semibold">{formatTime(last.arrival.at)}</p>
                       <p className="text-xs text-muted-foreground">{last.arrival.iataCode}</p>
                     </div>
                   </div>
 
-                  {/* Stops */}
-                  <div className="text-sm text-muted-foreground text-center">
-                    {segments.length === 1 ? 'Direct' : `${segments.length - 1} stop`}
+                  <div>
+                    {/* Clock */}
+                    <div className="text-xs text-muted-foreground flex flex-col items-center">
+                      <Clock className="h-4 w-4" />
+                      {formatDuration(first.duration)}
+                    </div>
+                    {/* Stops */}
+                    <div className="text-sm text-muted-foreground text-center">
+                      {segments.length === 1 ? 'Direct' : `${segments.length - 1} stop`}
+                    </div>
                   </div>
+
 
                   {/* Price */}
                   <div className="flex justify-between md:justify-end items-center gap-3">
