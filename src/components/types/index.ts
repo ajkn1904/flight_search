@@ -73,3 +73,19 @@ export interface PriceGraphProps {
 }
 
 
+export interface FlightFiltersProps {
+  filters: {
+    minPrice: number;
+    maxPrice: number;
+    airlines: string[];
+    stops: number[];
+    sortByPrice: '' | 'lowest' | 'highest';
+  };
+  setFilters: React.Dispatch<React.SetStateAction<any>>;
+  uniqueAirlines: string[];
+}
+
+export interface ExtendedDateSelectorProps extends DateSelectorProps {
+  minDate?: Date; 
+}
+

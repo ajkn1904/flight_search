@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Loader2, Plane, ArrowRightLeft, Filter, BarChart2, List } from 'lucide-react';
+import { Users, Loader2, Plane, ArrowRightLeft, BarChart2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { getAirportSuggestions, searchFlights } from '@/lib/amadeus';
@@ -18,6 +16,7 @@ import { DateSelector } from '@/components/utility/dateSelector';
 import { FlightResults } from './FlightResults';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PriceGraph } from './PriceGraph';
+import { FlightFilters } from './FlightFilter';
 
 
 
@@ -299,6 +298,7 @@ export function SearchFlight() {
                                 date={returnDate}
                                 onDateChange={setReturnDate}
                                 disabled={tripType === 'one-way'}
+                                minDate={departureDate} 
                             />
                         </div>
 
@@ -337,59 +337,11 @@ export function SearchFlight() {
                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* filters */}
                     <aside className="lg:col-span-3">
-                        <Card className="sticky top-24 rounded-md p-0">
-                            <CardContent className="space-y-4 p-4">
-                                <h3 className="flex gap-2 font-semibold">
-                                    <Filter className="h-4 w-4" /> Filters
-                                </h3>
-
-
-                                <div className='w-full'>
-                                    <Label className='mb-3'>Price</Label>
-                                    <Slider min={0} max={5000} step={50} value={[filters.minPrice, filters.maxPrice]} onValueChange={v =>
-                                        setFilters(p => ({ ...p, minPrice: v[0], maxPrice: v[1] }))} />
-                                </div>
-                                <div className='flex lg:flex-col gap-2 justify-between'>
-                                    <div>
-                                        <Label className='my-2'>Stops</Label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {[0, 1, 2].map(s => (
-                                                <Button className='p-2' key={s} size="sm" variant={filters.stops.includes(s) ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, stops: p.stops.includes(s) ? p.stops.filter(x => x !== s) : [...p.stops, s] }))}>
-                                                    {s === 0 ? 'Direct' : `${s} Stop`}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-
-                                    <div className="">
-                                        <Label className='my-2'>Sort by Price</Label>
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant={filters.sortByPrice === 'lowest' ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, sortByPrice: 'lowest' }))} > Lowest </Button>
-                                            <Button size="sm" variant={filters.sortByPrice === 'highest' ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, sortByPrice: 'highest' }))}
-                                            > Highest </Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-
-                                {uniqueAirlines.length > 0 && (
-                                    <div>
-                                        <Label>Airlines</Label>
-                                        <div className="mt-3 flex flex-wrap gap-3">
-                                            {uniqueAirlines.map(a => (
-                                                <div key={a} className="flex justify-between gap-2 items-center">
-                                                    <Checkbox checked={filters.airlines.includes(a)} onCheckedChange={c => setFilters(p => ({ ...p, airlines: c ? [...p.airlines, a] : p.airlines.filter(x => x !== a) }))} />
-                                                    <span className="text-sm">{a}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                            </CardContent>
-                        </Card>
+                        <FlightFilters
+                            filters={filters}
+                            setFilters={setFilters}
+                            uniqueAirlines={uniqueAirlines}
+                        />
                     </aside>
 
                     {/* results */}
