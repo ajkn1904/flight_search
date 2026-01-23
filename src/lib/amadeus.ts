@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const AMADEUS_API_KEY = import.meta.env.VITE_AMADEUS_API_KEY || 'KfS1t1totVdPWPYifluyAq7s41DzFNdG';
-const AMADEUS_API_SECRET = import.meta.env.VITE_AMADEUS_API_SECRET || 'bkENpiVOGYqMWRnp';
+const AMADEUS_API_KEY = import.meta.env.VITE_AMADEUS_API_KEY;
+const AMADEUS_API_SECRET = import.meta.env.VITE_AMADEUS_API_SECRET;
 
 async function getAccessToken() {
   try {

@@ -1,22 +1,31 @@
-'use client';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Plane, ChevronDown, ChevronUp } from 'lucide-react';
 import type { FlightOffer, FlightResultsProps } from '@/components/types';
-
+import { Separator } from '@/components/ui/separator';
 
 export function FlightResults({ flights = [], loading = false }: FlightResultsProps) {
   const [displayedFlights, setDisplayedFlights] = useState<FlightOffer[]>([]);
-  const [visibleCount, setVisibleCount] = useState<number>(0); // Start with 0
+  const [visibleCount, setVisibleCount] = useState<number>(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const itemsPerLoad = 10;
+
+
+
+useEffect(() => {
+  const filteredFlights = flights; 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setDisplayedFlights(filteredFlights);
+  const initialCount = filteredFlights.length <= itemsPerLoad ? filteredFlights.length : itemsPerLoad;
+  setVisibleCount(initialCount);
+}, [flights]); 
+
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayedFlights(flights);
-
     const initialCount = flights.length <= itemsPerLoad ? flights.length : itemsPerLoad;
     setVisibleCount(initialCount);
   }, [flights]);
@@ -35,8 +44,8 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
   if (loading) {
     return (
       <Card>
-        <CardContent className="py-12 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-green-500 border-t-transparent" />
+        <CardContent className="py-40 text-center rounded-md">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="mt-3 text-sm text-muted-foreground">Searching flights…</p>
         </CardContent>
       </Card>
@@ -45,24 +54,28 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
 
   if (!displayedFlights.length) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
+      <Card className='rounded-md'>
+        <CardContent className="py-12 text-center min-h-120">
           <Plane className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-3 font-medium">No flights found</p>
-          <p className="text-sm text-muted-foreground">Try different dates or routes</p>
+          <p className="text-sm text-muted-foreground">Try different dates or routes or adjust filter</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Available Flights</h2>
-        <Badge variant="outline">{flightsToShow.length} / {displayedFlights.length}</Badge>
+    <div className="bg-white dark:bg-gray-900 rounded-md min-h-120">
+      {/* Header */}
+      <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center p-5">
+        <h2 className="text-2xl font-semibold dark:text-white uppercase">Available Flights</h2>
+        <Badge variant="outline" className='bg-white dark:bg-gray-900'>
+          Show {flightsToShow.length} of {displayedFlights.length} flights
+        </Badge>
       </div>
 
-      <div className="space-y-3">
+      {/* Flight Cards */}
+      <div className="">
         {flightsToShow.map((flight) => {
           const segments = flight.itineraries[0].segments;
           const first = segments[0];
@@ -70,52 +83,53 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
           const isExpanded = expanded[flight.id];
 
           return (
-            <Card key={flight.id} className="hover:bg-gray-100 transition p-2">
+            <Card key={flight.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-primary hover:shadow-md transition px-3 py-6 rounded-none border-y-primary">
               <CardContent>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-4">
+                {/* Flight Info */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center">
 
                   {/* Airline */}
-                  <div className="text-sm font-medium">
+                  <div className="text-sm font-medium flex gap-2">
                     ✈ {first.carrierCode}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground truncate">
                       Flight {segments.map(s => s.carrierCode).join(' → ')}
                     </p>
                   </div>
 
+
                   {/* Route */}
-                  <div className="flex items-center gap-4">
-                    <div>
+                  <div className="flex items-center gap-2 justify-between w-full">
+                    <div className="text-center">
                       <p className="font-semibold">{formatTime(first.departure.at)}</p>
                       <p className="text-xs text-muted-foreground">{first.departure.iataCode}</p>
                     </div>
 
-                    <div>
+                    <div className="flex flex-col items-center">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground mt-1">{formatDuration(first.duration)}</p>
+                    </div>
+
+                    <div className="text-center">
                       <p className="font-semibold">{formatTime(last.arrival.at)}</p>
                       <p className="text-xs text-muted-foreground">{last.arrival.iataCode}</p>
                     </div>
                   </div>
 
-                  <div>
-                    {/* Clock */}
-                    <div className="text-xs text-muted-foreground flex flex-col items-center">
-                      <Clock className="h-4 w-4" />
-                      {formatDuration(first.duration)}
-                    </div>
-                    {/* Stops */}
-                    <div className="text-sm text-muted-foreground text-center">
-                      {segments.length === 1 ? 'Direct' : `${segments.length - 1} stop`}
-                    </div>
+                  {/* Stops */}
+                  <div className="text-sm text-muted-foreground text-center">
+                    {segments.length === 1 ? 'Direct' : `${segments.length - 1} stop`}
                   </div>
 
+                  <Separator className='md:hidden' />
 
-                  {/* Price */}
-                  <div className="flex justify-between md:justify-end items-center gap-3">
+                  {/* Price & Action */}
+                  <div className="flex justify-between items-center gap-3">
                     <div className="text-right">
-                      <p className="text-lg font-bold text-green-600">${flight.price.total}</p>
+                      <p className="text-lg font-bold text-primary">${flight.price.total}</p>
                       <p className="text-xs text-muted-foreground">{flight.price.currency}</p>
                     </div>
-                    <Button className="bg-green-600 hover:bg-green-700">Select</Button>
+                    <Button className="bg-primary hover:bg-green-600 min-w-20 text-sm py-1">Select</Button>
                   </div>
                 </div>
 
@@ -123,18 +137,18 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
                 {segments.length > 1 && (
                   <button
                     onClick={() => setExpanded(prev => ({ ...prev, [flight.id]: !prev[flight.id] }))}
-                    className="flex items-center gap-2 text-sm text-green-600 hover:underline"
+                    className="flex items-center gap-2 text-sm text-primary font-semibold hover:underline mt-1"
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    {isExpanded ? 'Hide itinerary' : 'View itinerary'}
+                    {isExpanded ? 'Hide segment' : 'View segment'}
                   </button>
                 )}
 
                 {/* Expanded Itinerary */}
                 {isExpanded && (
-                  <div className="border-t pt-3 space-y-2 text-sm">
+                  <div className="border-t pt-2 mt-2 space-y-1 text-sm text-muted-foreground">
                     {segments.map((s, i) => (
-                      <div key={i} className="flex justify-between text-muted-foreground">
+                      <div key={i} className="flex flex-col justify-between gap-1">
                         <span>{s.departure.iataCode} → {s.arrival.iataCode}</span>
                         <span>{formatTime(s.departure.at)} – {formatTime(s.arrival.at)} • {formatDuration(s.duration)}</span>
                       </div>
@@ -148,8 +162,11 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
       </div>
 
       {hasMoreFlights && (
-        <div className="flex justify-center pt-4">
-          <Button variant="outline" onClick={() => setVisibleCount(prev => Math.min(prev + itemsPerLoad, displayedFlights.length))}>
+        <div className="flex justify-center py-4">
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount(prev => Math.min(prev + itemsPerLoad, displayedFlights.length))}
+          >
             Show more flights
           </Button>
         </div>

@@ -30,7 +30,7 @@ export function LocationSelector({label, value, search, onSearchChange,locations
                             onValueChange={onSearchChange}
                         />
                         <CommandList>
-                            <CommandEmpty>No location found.</CommandEmpty>
+                            <CommandEmpty>{search ? 'Loading...' : 'No location found.'}</CommandEmpty>
                             <CommandGroup>
                                 {locations.map((location) => {
                                     const cityCode = location.subType === 'CITY'
