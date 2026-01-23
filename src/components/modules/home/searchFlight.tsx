@@ -56,7 +56,9 @@ export function SearchFlight() {
     const [fromOpen, setFromOpen] = useState(false);
     const [toOpen, setToOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const isSearchDisabled = loading || !from || !to || !departureDate;
     const [flightData, setFlightData] = useState<any[]>([]);
+    const [error, setError] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         minPrice: 0,
         maxPrice: 5000,
@@ -108,12 +110,7 @@ export function SearchFlight() {
             if (q.length < 2) return setter([]);
             try {
                 const res = await getAirportSuggestions(q);
-                setter(
-                    res.filter(
-                        (l: Location) =>
-                            l.subType === 'CITY' || l.subType === 'AIRPORT'
-                    )
-                );
+                setter(res.filter((l: any) => l.subType === 'CITY' || l.subType === 'AIRPORT'));
             } catch {
                 setter([]);
             }
@@ -153,8 +150,10 @@ export function SearchFlight() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+
         if (!from || !to || !departureDate) {
-            alert('Please fill required fields');
+            setError('Please select origin, destination, and departure date.');
             return;
         }
 
@@ -167,9 +166,7 @@ export function SearchFlight() {
                 originLocationCode: from.cityCode,
                 destinationLocationCode: to.cityCode,
                 departureDate: format(departureDate, 'yyyy-MM-dd'),
-                returnDate: returnDate
-                    ? format(returnDate, 'yyyy-MM-dd')
-                    : undefined,
+                returnDate: returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
                 adults: passengers.adults,
                 children: passengers.children || undefined,
                 infants: passengers.infants || undefined,
@@ -180,10 +177,10 @@ export function SearchFlight() {
 
             setFlightData(res?.data || []);
         } catch (err: any) {
-            alert(
+            setError(
                 err?.response?.data?.errors?.[0]?.detail ||
                 err.message ||
-                'Search failed'
+                'Search failed. Please try again.'
             );
         } finally {
             setLoading(false);
@@ -302,13 +299,18 @@ export function SearchFlight() {
                             />
                         </div>
 
-                        <Button type="submit" className="bg-primary hover:bg-green-600" disabled={loading} >
+                        <Button type="submit" className="bg-primary hover:bg-green-600" disabled={ isSearchDisabled} >
                             {loading && (
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             )}
                             Search Flights
                         </Button>
 
+                        {error && (
+                            <div className="px-4 py-3 text-destructive">
+                                {error}
+                            </div>
+                        )}
 
                         {/* popular trip */}
                         {flightData.length === 0 && (
@@ -346,7 +348,7 @@ export function SearchFlight() {
 
                     {/* results */}
                     <main className="lg:col-span-9">
-                        <Tabs defaultValue="graph" className="w-full">
+                        <Tabs defaultValue="list" className="w-full">
                             <TabsList className="mb-4">
                                 <TabsTrigger value="list" className="flex items-center gap-2">
                                     <List className="h-4 w-4" /> Flight Results
