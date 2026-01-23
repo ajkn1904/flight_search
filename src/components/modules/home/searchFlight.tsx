@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Loader2, Plane, ArrowRightLeft, Filter } from 'lucide-react';
+import { Users, Loader2, Plane, ArrowRightLeft, Filter, BarChart2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,6 +16,8 @@ import type { Location, Passengers, SelectedLocation } from '@/components/types'
 import { LocationSelector } from '@/components/utility/locationSelector';
 import { DateSelector } from '@/components/utility/dateSelector';
 import { FlightResults } from './FlightResults';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PriceGraph } from './PriceGraph';
 
 
 
@@ -61,6 +63,7 @@ export function SearchFlight() {
         maxPrice: 5000,
         airlines: [] as string[],
         stops: [] as number[],
+        sortByPrice: '' as '' | 'lowest' | 'highest',
     });
 
 
@@ -75,7 +78,7 @@ export function SearchFlight() {
     }, [flightData]);
 
     const filteredFlights = useMemo(() => {
-        return flightData.filter(f => {
+        const f = flightData.filter(f => {
             const price = Number(f.price?.total);
             if (price < filters.minPrice || price > filters.maxPrice) return false;
 
@@ -83,8 +86,7 @@ export function SearchFlight() {
                 const carriers = f.itineraries[0].segments.map(
                     (s: any) => s.carrierCode
                 );
-                if (!carriers.some((c: string) => filters.airlines.includes(c)))
-                    return false;
+                if (!carriers.some((c: string) => filters.airlines.includes(c))) return false;
             }
             if (filters.stops.length) {
                 const stops = f.itineraries[0].segments.length - 1;
@@ -92,7 +94,14 @@ export function SearchFlight() {
             }
             return true;
         });
+
+        // sort by price if selected
+        if (filters.sortByPrice === 'lowest') f.sort((a, b) => Number(a.price.total) - Number(b.price.total));
+        if (filters.sortByPrice === 'highest') f.sort((a, b) => Number(b.price.total) - Number(a.price.total));
+
+        return f;
     }, [flightData, filters]);
+
 
 
     useEffect(() => {
@@ -152,7 +161,7 @@ export function SearchFlight() {
 
         setLoading(true);
         setFlightData([]);
-        setFilters({ minPrice: 0, maxPrice: 5000, airlines: [], stops: [] });
+        setFilters({ minPrice: 0, maxPrice: 5000, airlines: [], stops: [], sortByPrice: 'lowest' });
 
         try {
             const res = await searchFlights({
@@ -340,14 +349,26 @@ export function SearchFlight() {
                                     <Slider min={0} max={5000} step={50} value={[filters.minPrice, filters.maxPrice]} onValueChange={v =>
                                         setFilters(p => ({ ...p, minPrice: v[0], maxPrice: v[1] }))} />
                                 </div>
-                                <div>
-                                    <Label className='my-2'>Stops</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {[0, 1, 2].map(s => (
-                                            <Button className='p-2' key={s} size="sm" variant={filters.stops.includes(s) ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, stops: p.stops.includes(s) ? p.stops.filter(x => x !== s) : [...p.stops, s] }))}>
-                                                {s === 0 ? 'Direct' : `${s} Stop`}
-                                            </Button>
-                                        ))}
+                                <div className='flex lg:flex-col gap-2 justify-between'>
+                                    <div>
+                                        <Label className='my-2'>Stops</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[0, 1, 2].map(s => (
+                                                <Button className='p-2' key={s} size="sm" variant={filters.stops.includes(s) ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, stops: p.stops.includes(s) ? p.stops.filter(x => x !== s) : [...p.stops, s] }))}>
+                                                    {s === 0 ? 'Direct' : `${s} Stop`}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+
+                                    <div className="">
+                                        <Label className='my-2'>Sort by Price</Label>
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant={filters.sortByPrice === 'lowest' ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, sortByPrice: 'lowest' }))} > Lowest </Button>
+                                            <Button size="sm" variant={filters.sortByPrice === 'highest' ? 'default' : 'outline'} onClick={() => setFilters(p => ({ ...p, sortByPrice: 'highest' }))}
+                                            > Highest </Button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -373,8 +394,25 @@ export function SearchFlight() {
 
                     {/* results */}
                     <main className="lg:col-span-9">
-                        <FlightResults flights={filteredFlights} loading={loading} />
+                        <Tabs defaultValue="graph" className="w-full">
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="list" className="flex items-center gap-2">
+                                    <List className="h-4 w-4" /> Flight Results
+                                </TabsTrigger>
+                                <TabsTrigger value="graph" className="flex items-center gap-2">
+                                    <BarChart2 className="h-4 w-4" /> Price Graph
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="graph">
+                                <PriceGraph flights={flightData} filters={filters} />
+                            </TabsContent>
+                            <TabsContent value="list">
+                                <FlightResults flights={filteredFlights} loading={loading} />
+                            </TabsContent>
+                        </Tabs>
                     </main>
+
                 </div>
             )}
         </>

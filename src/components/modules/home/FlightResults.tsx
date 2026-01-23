@@ -43,8 +43,8 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-40 text-center rounded-md">
+      <Card className='rounded-md'>
+        <CardContent className="py-48 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="mt-3 text-sm text-muted-foreground">Searching flights…</p>
         </CardContent>
@@ -55,7 +55,7 @@ useEffect(() => {
   if (!displayedFlights.length) {
     return (
       <Card className='rounded-md'>
-        <CardContent className="py-12 text-center min-h-120">
+        <CardContent className="py-48 text-center">
           <Plane className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-3 font-medium">No flights found</p>
           <p className="text-sm text-muted-foreground">Try different dates or routes or adjust filter</p>
@@ -65,7 +65,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-md min-h-120">
+    <div className="bg-white dark:bg-gray-900 rounded-md min-h-114">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center p-5">
         <h2 className="text-2xl font-semibold dark:text-white uppercase">Available Flights</h2>

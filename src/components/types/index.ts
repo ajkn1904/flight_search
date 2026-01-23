@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Location {
   id: string;
   iataCode: string;
@@ -54,5 +55,21 @@ export interface FlightResultsProps {
   loading?: boolean;
 }
 
+export interface PriceDataPoint {
+  date: string;
+  price: number;
+  cheapest: number;
+  average: number;
+}
+
+export interface PriceGraphProps {
+  flights?: any[];
+  filters?: {
+    maxPrice?: number;
+    minPrice?: number;
+    airlines?: string[];
+    stops?: number[];
+  };
+}
 
 
