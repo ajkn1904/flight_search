@@ -5,7 +5,7 @@ import banner from '@/assets/flight_banner.jpg';
 
 export function Banner() {
     return (
-        <div className="relative min-h-[600px] w-full overflow-hidden pb-24">
+        <div className="relative min-h-150 w-full overflow-hidden pb-24">
 
             <div className="absolute inset-0">
                 <div
@@ -14,7 +14,7 @@ export function Banner() {
                         backgroundImage: `url(${banner})`,
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-green-900/80 to-emerald-900/70" />
+                <div className="absolute inset-0 bg-gradient-to-r from-green-900/60 to-emerald-900/70 dark:from-green-900/90 dark:to-emerald-900/90" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
             </div>
 

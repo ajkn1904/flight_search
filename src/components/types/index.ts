@@ -1,3 +1,5 @@
+import type { Theme } from "@/provider/theme.provider";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Location {
   id: string;
@@ -88,4 +90,12 @@ export interface FlightFiltersProps {
 export interface ExtendedDateSelectorProps extends DateSelectorProps {
   minDate?: Date; 
 }
+
+
+export type ThemeProviderProps = {
+  children: React.ReactNode
+  defaultTheme?: Theme
+  storageKey?: string
+}
+
 
