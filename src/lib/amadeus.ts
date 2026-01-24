@@ -75,7 +75,7 @@ export async function searchFlights(params: {
       }
     );
 
-    console.log(res);
+    //console.log(res);
     return res.data;
   } catch (error) {
     console.error('Error searching flights:', error);
