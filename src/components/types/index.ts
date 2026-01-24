@@ -46,10 +46,25 @@ export type Passengers = {
   infants: number;
 };
 
+export interface PriceTrendPrediction {
+  label: '🔥 Good deal' | '⚠️ Price rising';
+  isGoodDeal: boolean;
+  avgPrice: number;
+  currentPrice: number;
+}
+
 export interface FlightOffer {
   id: string;
   price: { total: string; currency: string };
-  itineraries: Array<{ segments: Array<{ departure: { iataCode: string; at: string }; arrival: { iataCode: string; at: string }; carrierCode: string; duration: string }> }>;
+  itineraries: Array<{
+    segments: Array<{
+      departure: { iataCode: string; at: string };
+      arrival: { iataCode: string; at: string };
+      carrierCode: string;
+      duration: string;
+    }>;
+  }>;
+  pricePrediction?: PriceTrendPrediction;
 }
 
 export interface FlightResultsProps {

@@ -97,7 +97,7 @@ export function PriceGraph({ flights = [], filters = {} }: PriceGraphProps) {
   const actualMaxPrice = actualPrices.length ? Math.max(...actualPrices) : 0;
 
   return (
-    <Card className="w-full rounded-md">
+    <Card className="w-full rounded-md my-3 md:my-11.5 lg:my-12">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">

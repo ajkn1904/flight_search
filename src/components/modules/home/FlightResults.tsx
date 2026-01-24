@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Plane, ChevronDown, ChevronUp } from 'lucide-react';
 import type { FlightOffer, FlightResultsProps } from '@/components/types';
 import { Separator } from '@/components/ui/separator';
+import { FlightSkeleton } from '@/components/utility/Skeleton';
+import { cn } from '@/lib/utils';
+
+const getPricePrediction = (currentPrice: number, allPrices: number[]): '🔥 Good deal' | '⚠️ Price rising' => {
+  if (allPrices.length === 0) return '⚠️ Price rising';
+
+  const avgPrice = allPrices.reduce((sum, price) => sum + price, 0) / allPrices.length;
+
+
+  if (currentPrice < avgPrice) {
+    return '🔥 Good deal';
+  } else {
+    return '⚠️ Price rising';
+  }
+};
 
 export function FlightResults({ flights = [], loading = false }: FlightResultsProps) {
   const [displayedFlights, setDisplayedFlights] = useState<FlightOffer[]>([]);
@@ -12,21 +28,22 @@ export function FlightResults({ flights = [], loading = false }: FlightResultsPr
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const itemsPerLoad = 10;
 
-
-
-useEffect(() => {
-  const filteredFlights = flights; 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  setDisplayedFlights(filteredFlights);
-  const initialCount = filteredFlights.length <= itemsPerLoad ? filteredFlights.length : itemsPerLoad;
-  setVisibleCount(initialCount);
-}, [flights]); 
+  const allPrices = flights.map(flight => parseFloat(flight.price.total));
+  const flightsWithPredictions = flights.map(flight => ({
+    ...flight,
+    pricePrediction: {
+      label: getPricePrediction(parseFloat(flight.price.total), allPrices),
+      isGoodDeal: parseFloat(flight.price.total) < (allPrices.reduce((sum, price) => sum + price, 0) / allPrices.length),
+      avgPrice: allPrices.reduce((sum, price) => sum + price, 0) / allPrices.length,
+      currentPrice: parseFloat(flight.price.total)
+    }
+  }));
 
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDisplayedFlights(flights);
-    const initialCount = flights.length <= itemsPerLoad ? flights.length : itemsPerLoad;
+    const filteredFlights = flightsWithPredictions;
+    setDisplayedFlights(filteredFlights);
+    const initialCount = filteredFlights.length <= itemsPerLoad ? filteredFlights.length : itemsPerLoad;
     setVisibleCount(initialCount);
   }, [flights]);
 
@@ -44,10 +61,11 @@ useEffect(() => {
   if (loading) {
     return (
       <Card className='rounded-md'>
-        <CardContent className="py-48 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="mt-3 text-sm text-muted-foreground">Searching flights…</p>
-        </CardContent>
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <FlightSkeleton key={i} />
+          ))}
+        </div>
       </Card>
     );
   }
@@ -81,6 +99,7 @@ useEffect(() => {
           const first = segments[0];
           const last = segments[segments.length - 1];
           const isExpanded = expanded[flight.id];
+          const prediction = flight.pricePrediction;
 
           return (
             <Card key={flight.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-primary hover:shadow-md transition px-3 py-6 rounded-none border-y-primary">
@@ -89,14 +108,29 @@ useEffect(() => {
                 {/* Flight Info */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center">
 
-                  {/* Airline */}
-                  <div className="text-sm font-medium flex gap-2">
-                    ✈ {first.carrierCode}
-                    <p className="text-xs text-muted-foreground truncate">
-                      Flight {segments.map(s => s.carrierCode).join(' → ')}
-                    </p>
-                  </div>
+                  <div className='flex flex-row md:flex-col justify-between'>
+                    {/* Airline */}
+                    <div className="text-sm font-medium flex gap-2">
+                      <p>✈ {first.carrierCode} {" "}
+                      <span className=" text-muted-foreground truncate">
+                        (Flight {segments.map(s => s.carrierCode).join(' → ')})
+                      </span></p>
+                    </div>
 
+                    {/* price trend */}
+                    {prediction && (
+                      <div className="">
+                        <Badge className={cn(
+                          "text-xs font-semibold py-1 px-2",
+                          prediction.label === '🔥 Good deal'
+                            ? "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100"
+                            : "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-600/20 dark:text-red-100"
+                        )}>
+                          {prediction.label}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Route */}
                   <div className="flex items-center gap-2 justify-between w-full">
@@ -125,11 +159,32 @@ useEffect(() => {
 
                   {/* Price & Action */}
                   <div className="flex justify-between items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">${flight.price.total}</p>
-                      <p className="text-xs text-muted-foreground">{flight.price.currency}</p>
+                    <div className="text-">
+                      <div className="flex items-center justify-end gap-1">
+                        <p className="text-lg font-bold text-primary">${flight.price.total}</p>
+                        {prediction && (
+                          <span className={cn(
+                            "text-xs",
+                            prediction.label === '🔥 Good deal'
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                          )}>
+                            {prediction.label === '🔥 Good deal' ? '↓' : '↑'}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        
+                        {prediction && (
+                          <span className="text-sm md:text-xs mt-0.5 text-muted-foreground">
+                            Avg: ${prediction.avgPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <Button className="bg-primary hover:bg-green-600 min-w-20 text-sm py-1">Select</Button>
+                    <Button className="bg-primary hover:bg-green-600 min-w-20 text-sm py-1">
+                      Select
+                    </Button>
                   </div>
                 </div>
 

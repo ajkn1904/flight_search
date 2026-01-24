@@ -28,10 +28,10 @@ const FLIGHT_CLASSES = [
 ];
 
 const POPULAR_FLIGHTS = [
-    { from: 'NYC', to: 'LAX', label: 'New York → Los Angeles' },
-    { from: 'LON', to: 'PAR', label: 'London → Paris' },
-    { from: 'DXB', to: 'TYO', label: 'Dubai → Tokyo' },
-    { from: 'LAX', to: 'MIA', label: 'Los Angeles → Miami' },
+    { from: 'NYC', to: 'LAX', label: 'NEW YORK → LOS ANGELES' },
+    { from: 'LON', to: 'PAR', label: 'LONDON → PARIS' },
+    { from: 'DXB', to: 'TYO', label: 'DUBAI → TOKYO' },
+    { from: 'LAX', to: 'MIA', label: 'LOS ANGELES → MIAMI' },
 ];
 
 export function SearchFlight() {
@@ -196,7 +196,7 @@ export function SearchFlight() {
                     <form onSubmit={handleSearch} className="space-y-6">
 
                         {/* initial type/class */}
-                        <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex flex-col md:flex-row gap-4 my-0">
                             <div className="space-y-2">
                                 <Label className="flex gap-2 items-center">
                                     <ArrowRightLeft className="h-4 w-4" /> Trip Type
@@ -255,7 +255,7 @@ export function SearchFlight() {
                         </div>
 
                         {/* locations & dates */}
-                        <div className="grid md:grid-cols-4 gap-4">
+                        <div className="grid md:grid-cols-4 gap-4 my-3">
                             <LocationSelector
                                 label="From *"
                                 value={from}
@@ -295,40 +295,43 @@ export function SearchFlight() {
                                 date={returnDate}
                                 onDateChange={setReturnDate}
                                 disabled={tripType === 'one-way'}
-                                minDate={departureDate} 
+                                minDate={departureDate}
                             />
                         </div>
 
-                        <Button type="submit" className="bg-primary hover:bg-green-600" disabled={ isSearchDisabled} >
+                        <Button type="submit" className="bg-primary hover:bg-green-600 my-2" disabled={isSearchDisabled} >
                             {loading && (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
                             )}
                             Search Flights
                         </Button>
 
-                        {error && (
-                            <div className="px-4 py-3 text-destructive">
-                                {error}
-                            </div>
-                        )}
+
+
+                        <div className="text-destructive h-1">
+                            {error && (
+                                <>{error}</>
+                            )}
+                        </div>
+
 
                         {/* popular trip */}
-                        {flightData.length === 0 && (
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Popular routes
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {POPULAR_FLIGHTS.map(r => (
-                                        <Badge key={r.label} variant="outline" className="cursor-pointer hover:bg-muted"
-                                            onClick={() => { setFrom({ cityCode: r.from, cityName: r.from, countryCode: 'US', displayName: r.label.split('→')[0].trim() }); setTo({ cityCode: r.to, cityName: r.to, countryCode: 'US', displayName: r.label.split('→')[1].trim() }) }}
-                                        >
-                                            {r.label}
-                                        </Badge>
-                                    ))}
-                                </div>
+
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Popular routes
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {POPULAR_FLIGHTS.map(r => (
+                                    <Badge key={r.label} variant="outline" className="cursor-pointer hover:bg-muted"
+                                        onClick={() => { setFrom({ cityCode: r.from, cityName: r.from, countryCode: 'US', displayName: r.label.split('→')[0].trim() }); setTo({ cityCode: r.to, cityName: r.to, countryCode: 'US', displayName: r.label.split('→')[1].trim() }) }}
+                                    >
+                                        {r.label}
+                                    </Badge>
+                                ))}
                             </div>
-                        )}
+                        </div>
+
                     </form>
                 </CardContent>
             </Card>
@@ -346,25 +349,31 @@ export function SearchFlight() {
                         />
                     </aside>
 
-                    {/* results */}
-                    <main className="lg:col-span-9">
-                        <Tabs defaultValue="list" className="w-full">
-                            <TabsList className="mb-4">
-                                <TabsTrigger value="list" className="flex items-center gap-2">
-                                    <List className="h-4 w-4" /> Flight Results
-                                </TabsTrigger>
-                                <TabsTrigger value="graph" className="flex items-center gap-2">
-                                    <BarChart2 className="h-4 w-4" /> Price Graph
-                                </TabsTrigger>
-                            </TabsList>
+                    <main className="lg:col-span-9 lg:h-[calc(100vh-10px)] lg:overflow-hidden flex flex-col">
+                        <div className="sticky top-0 bg-muted z-10 p-2 rounded-md">
+                            <Tabs defaultValue="list" className="w-full">
+                                <TabsList className="w-full">
+                                    <TabsTrigger value="list" className="flex items-center gap-2 flex-1">
+                                        <List className="h-4 w-4" /> Flight Results
+                                    </TabsTrigger>
+                                    <TabsTrigger value="graph" className="flex items-center gap-2 flex-1">
+                                        <BarChart2 className="h-4 w-4" /> Price Graph
+                                    </TabsTrigger>
+                                </TabsList>
 
-                            <TabsContent value="graph">
-                                <PriceGraph flights={flightData} filters={filters} />
-                            </TabsContent>
-                            <TabsContent value="list">
-                                <FlightResults flights={filteredFlights} loading={loading} />
-                            </TabsContent>
-                        </Tabs>
+                                <TabsContent value="graph" className="mt-4">
+                                    <div>
+                                        <PriceGraph flights={flightData} filters={filters} />
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="list" className="mt-4">
+                                    <div className="h-[calc(100vh-90px)] overflow-auto">
+                                        <FlightResults flights={filteredFlights} loading={loading} />
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </div>
                     </main>
 
                 </div>
